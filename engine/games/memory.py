@@ -27,7 +27,7 @@ class MemoryGame(GameBase):
     ICON = "memory"
     DESC = "Flip cards, match all pairs in fewest moves"
 
-    FLIP_BACK_DELAY = 1.1
+    FLIP_BACK_DELAY = 2.0
 
     def __init__(self):
         super().__init__()

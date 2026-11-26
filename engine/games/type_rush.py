@@ -30,8 +30,8 @@ class TypeRushGame(GameBase):
     ICON = "type"
     DESC = "Type the words fast - looks like real work"
 
-    MIN_TIME = 1.0
-    START_TIME = 1.8
+    MIN_TIME = 1.8
+    START_TIME = 3.0
 
     def __init__(self):
         super().__init__()
@@ -56,7 +56,7 @@ class TypeRushGame(GameBase):
         self.word = self.pool.pop()
         self.progress = 0
         # difficulty ramp: faster required as score grows, with a fair floor
-        self.time_left = max(self.MIN_TIME, self.START_TIME - self.score * 0.008)
+        self.time_left = max(self.MIN_TIME, self.START_TIME - self.score * 0.005)
         self.time_total = self.time_left
 
     def handle(self, event):

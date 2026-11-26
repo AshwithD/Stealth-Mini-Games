@@ -14,10 +14,14 @@ MARGIN = 18
 
 
 def menu_cells(canvas_size):
-    """Return list of (key, rect, label, icon, kind) for the 3x3 grid."""
-    top = 62
-    bottom_reserve = 70
-    usable = canvas_size - top - bottom_reserve
+    """Return list of (key, rect, label, icon, kind) for the 3x3 grid.
+
+    The grid is centered in the full canvas (no title, no border), so it
+    fills the window cleanly and stays aligned.
+    """
+    top_reserve = 24      # small top margin (no title anymore)
+    bottom_reserve = 56   # room for the control hints at the bottom
+    usable = canvas_size - top_reserve - bottom_reserve
     cell_h = (usable - (GRID_ROWS - 1) * CELL_GAP) // GRID_ROWS
     cell_w = (canvas_size - 2 * MARGIN - (GRID_COLS - 1) * CELL_GAP) // GRID_COLS
     cells = []
@@ -27,7 +31,7 @@ def menu_cells(canvas_size):
             if idx >= 9:
                 break
             x = MARGIN + j * (cell_w + CELL_GAP)
-            y = top + i * (cell_h + CELL_GAP)
+            y = top_reserve + i * (cell_h + CELL_GAP)
             if idx < 7:
                 cells.append((str(idx + 1), pygame.Rect(x, y, cell_w, cell_h),
                               None, None, "game"))
@@ -84,8 +88,7 @@ def draw_menu(canvas, R, meta, hover, store):
     """meta: list of (key, name, label, icon, desc) from the games registry."""
     R.clear(canvas)
     w = R.canvas_size
-    s = R.text(44, True, "MINI GAMES", FG)
-    R.blit_center(canvas, s, w // 2, 38)
+    # no title text (stealth) - grid fills the canvas cleanly
     meta_by_key = {m[0]: m for m in meta}
     for key, rect, label, icon, kind in menu_cells(w):
         if kind == "game":
@@ -103,9 +106,9 @@ def draw_menu(canvas, R, meta, hover, store):
         l = R.text(20, True, label, BG if sel else FG)
         R.blit_center(canvas, l, rect.x + rect.w // 2, rect.y + 58)
     h1 = R.text(23, False, "1-9 / CLICK    ESC = QUIT", DIM)
-    R.blit_center(canvas, h1, w // 2, w - 56)
+    R.blit_center(canvas, h1, w // 2, w - 44)
     h2 = R.text(21, False, "drag to move    right-click quits", DIM)
-    R.blit_center(canvas, h2, w // 2, w - 34)
+    R.blit_center(canvas, h2, w // 2, w - 22)
     R.finish(canvas)
 
 
@@ -134,7 +137,7 @@ def draw_stats(canvas, R, store, meta):
         hint = R.text(24, False, "no games played yet", DIM)
         R.blit_center(canvas, hint, w // 2, 150)
     tot = R.text(28, True, f"TOTAL {store.total_score}", FG)
-    R.blit_center(canvas, tot, w // 2, w - 46)
+    R.blit_center(canvas, tot, w // 2, w - 44)
     back = R.text(21, False, "press Esc / click back", DIM)
-    R.blit_center(canvas, back, w // 2, w - 18)
+    R.blit_center(canvas, back, w // 2, w - 22)
     R.finish(canvas)

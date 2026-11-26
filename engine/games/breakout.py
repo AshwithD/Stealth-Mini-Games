@@ -49,7 +49,7 @@ class BreakoutGame(GameBase):
         self.ball = None
         self.vx = 0.0
         self.vy = 0.0
-        self.speed = 2.2
+        self.speed = 1.6
         self.lives = 3
         self.score = 0
         self.over = False
@@ -110,7 +110,7 @@ class BreakoutGame(GameBase):
             self.ball = (self.paddle_x + PADDLE_W / 2, self.paddle_y - BALL_R - 2)
             return
         # ramp speed gently with score
-        self.speed = min(4.0, 2.2 + self.score * 0.015)
+        self.speed = min(3.0, 1.6 + self.score * 0.012)
         vmag = (self.vx * self.vx + self.vy * self.vy) ** 0.5
         if vmag > 0:
             self.vx = self.vx / vmag * self.speed

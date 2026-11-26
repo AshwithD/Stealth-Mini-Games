@@ -209,7 +209,7 @@ g3 = GAME_CLASSES["2"]()
 g3.time_left = 0.001
 g3.update(0.5)
 check("timeout counts mistake", g3.mistakes == 1)
-for _ in range(20):
+for _ in range(25):
     g3.update(1.0)
 check("3 mistakes -> over", g3.over)
 
@@ -223,12 +223,12 @@ check("2048 spawns into empty cell", n >= 3)
 moved = g.move(0, -1)  # left
 check("2048 left move registers", moved is True)
 check("2048 move creates animation", g.anim is not None)
-for _ in range(20):
+for _ in range(25):
     g.update(1 / 60)
 check("2048 animation finishes", g.anim is None)
 for _ in range(4):
     g.move(0, 1); g.move(1, 0); g.move(-1, 0)
-    for _ in range(20):
+    for _ in range(25):
         g.update(1 / 60)
 undo_before = (sum(v for row in g.grid for v in row), g.score)
 check("2048 undo possible", g.undo())

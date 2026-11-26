@@ -1,0 +1,7 @@
+{
+  "title": "Mini Games",
+  "target_cm": 3.0,
+  "pixels_per_cm": 38,
+  "always_on_top": true,
+  "fps": 60
+}

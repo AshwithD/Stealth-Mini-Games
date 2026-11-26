@@ -27,12 +27,12 @@ class FlapGame(GameBase):
         super().__init__()
         self.bird_w, self.bird_h = 38, 30
         self.gx = 92
-        self.gravity = 0.20
-        self.jump = -7.5
-        self.base_speed = 1.9
+        self.gravity = 0.24
+        self.jump = -5.0
+        self.base_speed = 1.5
         self.base_gap = 185.0
         self.pipe_w = 46
-        self.spawn_every = 95
+        self.spawn_every = 110
         # pre-render the bird once (rotated copies are cheap)
         self.bird_img = pygame.Surface((self.bird_w + 14, self.bird_h + 14),
                                        pygame.SRCALPHA)
@@ -53,10 +53,10 @@ class FlapGame(GameBase):
         self.spawn_timer = 90
 
     def _speed(self):
-        return min(2.6, self.base_speed + self.score * 0.04)
+        return min(2.2, self.base_speed + self.score * 0.03)
 
     def _gap(self):
-        return max(110.0, self.base_gap - self.score * 1.0)
+        return max(120.0, self.base_gap - self.score * 0.8)
 
     def _new_pipe(self):
         gap = self._gap()
@@ -95,8 +95,8 @@ class FlapGame(GameBase):
                 self.score += 1
         self.pipes = [p for p in self.pipes if p["x"] + self.pipe_w > 0]
         # cap the fall speed so the bird never accelerates into an edge
-        if self.vy > 7.0:
-            self.vy = 7.0
+        if self.vy > 5.0:
+            self.vy = 5.0
         if self.grace > 0:
             # grace: no collisions and clamp to the field so the bird can
             # never fall out before the player can react

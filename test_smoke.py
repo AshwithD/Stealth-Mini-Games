@@ -66,8 +66,11 @@ def main():
         time.sleep(0.4)
         assert not app.stats_view
 
-        # a click on the menu must start a game (cell 1 is top-left area)
-        click((70, 80))
+        # a click on the menu must start a game (cell 1 is top-left area).
+        # Mouse events arrive in screen space (114 px window); the App
+        # scales them to canvas space (360 px). Cell 1's canvas center is
+        # ~(68, 96) -> screen ~(22, 30).
+        click((22, 30))
         time.sleep(0.3)
         assert app.state == "game" and app.game is not None, \
             f"click did not start a game (state={app.state})"

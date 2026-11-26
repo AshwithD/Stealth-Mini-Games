@@ -23,7 +23,7 @@ import pygame
 from . import config
 from .constants import CANVAS, NOFRAME
 from .input import (DragController, move_to_bottom_left, set_topmost,
-                       window_position)
+                       window_position, cursor_pos)
 from .menu import draw_menu, draw_stats, menu_cells
 from .renderer import Renderer
 from .storage import Store
@@ -64,6 +64,16 @@ class App:
     # ------------------------------------------------------------------
     # Event routing
     # ------------------------------------------------------------------
+    def _scale_pos(self, pos):
+        """Convert a screen-space mouse position to canvas coordinates.
+
+        The window is small (~114 px) but the internal canvas is 360 px,
+        so mouse events arrive in screen space and must be scaled up for
+        the games (which use canvas coordinates).
+        """
+        sx = CANVAS / self.win_size
+        return (pos[0] * sx, pos[1] * sx)
+
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             self._running = False
@@ -75,12 +85,18 @@ class App:
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.drag.on_press(event.pos)
-            self._press_pos = event.pos
+            self._press_pos = self._scale_pos(event.pos)
             return
         if event.type == pygame.MOUSEMOTION:
             if self.state == "menu":
                 self.hover = event.pos
             self.drag.on_move(event.pos)
+            # forward motion to the running game (e.g. Breakout paddle)
+            if self.state == "game" and self.game is not None and not self.drag.dragging:
+                self.game.handle(pygame.event.Event(pygame.MOUSEMOTION,
+                                                    pos=self._scale_pos(event.pos),
+                                                    buttons=event.buttons,
+                                                    rel=event.rel))
             return
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.drag.on_release(event.pos):
@@ -217,6 +233,9 @@ class App:
                         move_to_bottom_left(self.win_size)
                 for event in pygame.event.get():
                     self.handle_event(event)
+                # drive the drag from polled cursor position (smooth even
+                # when the window has moved away from the cursor)
+                self.drag.tick()
                 self._update(dt)
                 self._draw(R)
                 R.present(screen)

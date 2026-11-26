@@ -41,6 +41,10 @@ SM_CYVIRTUALSCREEN = 79
 WINDOW_CAPTION = "Mini Games"
 
 
+class _POINT(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+
 def _user32():
     """Return ctypes user32 with proper signatures (Windows only)."""
     if not sys.platform.startswith("win"):
@@ -57,6 +61,8 @@ def _user32():
     user32.GetSystemMetrics.restype = ctypes.c_int
     user32.FindWindowW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
     user32.FindWindowW.restype = ctypes.c_void_p
+    user32.GetCursorPos.argtypes = [ctypes.POINTER(_POINT)]
+    user32.GetCursorPos.restype = ctypes.c_int
     return user32
 
 
@@ -113,6 +119,31 @@ def window_position():
         except Exception:
             pass
     return 0, 0
+
+
+def cursor_pos():
+    """Absolute screen cursor position via Win32 GetCursorPos.
+
+    Used for dragging: MOUSEMOTION events stop being delivered once the
+    borderless window moves out from under the cursor, but Win32 can
+    always report the absolute cursor position. This lets us follow the
+    cursor smoothly for the whole drag.
+    """
+    if _USER32 is not None:
+        try:
+            p = _POINT()
+            if _USER32.GetCursorPos(ctypes.byref(p)):
+                return int(p.x), int(p.y)
+        except Exception:
+            pass
+    # fallback (non-Windows / test): use pygame's mouse position
+    try:
+        mx, my = pygame.mouse.get_pos()
+        # add the window offset so it is screen-absolute
+        wx, wy = window_position()
+        return wx + mx, wy + my
+    except Exception:
+        return 0, 0
 
 
 def _set_window_pos(h, x, y):
@@ -206,61 +237,91 @@ def move_to_bottom_left(window_size):
 
 
 class DragController:
-    """Press -> threshold -> drag -> release, with click detection."""
+    """Press -> threshold -> drag -> release, with click detection.
+
+    Dragging is driven by **polling the absolute cursor position** every
+    frame (Win32 GetCursorPos) rather than relying on MOUSEMOTION events.
+    When a borderless window moves, it slides out from under the cursor
+    and SDL stops delivering mouse-motion events, which makes event-based
+    dragging stutter or stop. Polling the OS cursor position bypasses that
+    entirely: the window always follows the cursor smoothly for the whole
+    drag, regardless of where the window ends up.
+
+    The window is positioned by **absolute** coordinates (cursor minus the
+    grab offset) so it tracks the cursor exactly, with no drift.
+    """
 
     def __init__(self, threshold=DRAG_THRESHOLD):
         self.threshold = threshold
         self.pressed = False
         self.dragging = False
-        self._press_pos = None      # mouse position at press
-        self._last_pos = None       # last mouse position seen
+        self._press_pos = None      # cursor screen position at press
         self._win_pos = None        # window screen position at press
+        self._grab_dx = 0           # cursor.x - window.x at press
+        self._grab_dy = 0           # cursor.y - window.y at press
+        self._moved = False         # has the cursor moved past threshold
 
     # ------------------------------------------------------------------
     def on_press(self, pos):
         """Left mouse pressed: remember, but do not act yet."""
         self.pressed = True
         self.dragging = False
+        self._moved = False
+        # capture the absolute cursor position and the window position.
+        # Prefer the event-provided pos (accurate + testable); on Windows
+        # tick() re-polls the real cursor for smooth dragging.
         self._press_pos = pos
-        self._last_pos = pos
-        # capture the window's real screen position (best effort)
         self._win_pos = window_position()
+        # grab offset: where the cursor sits relative to the window, so
+        # the window follows the cursor with the same offset throughout
+        self._grab_dx = self._press_pos[0] - self._win_pos[0]
+        self._grab_dy = self._press_pos[1] - self._win_pos[1]
 
     def on_move(self, pos):
-        """Mouse moved: start dragging once past the threshold, then follow.
+        """Mouse moved (event-based): track movement for click detection.
 
-        Uses incremental deltas (movement since the last event) so the
-        window follows the cursor smoothly, independent of how accurate
-        the initial position capture was.
+        The actual window moving during a drag is done by ``tick()``,
+        which polls the absolute cursor position. This handler only
+        decides click-vs-drag from the movement seen in events.
         """
-        if not self.pressed or self.dragging:
+        if not self.pressed:
             return False
-        if self._last_pos is None or self._win_pos is None:
-            return False
-        # movement since the last event
-        dx = pos[0] - self._last_pos[0]
-        dy = pos[1] - self._last_pos[1]
-        self._last_pos = pos
-        if not self.dragging:
-            # still below threshold: accumulate, do not move yet
-            total_dx = pos[0] - self._press_pos[0]
-            total_dy = pos[1] - self._press_pos[1]
-            if total_dx * total_dx + total_dy * total_dy <=                     self.threshold * self.threshold:
-                return False
-            self.dragging = True
-        # move by the incremental delta from the current window position
-        move_window_to(self._win_pos[0] + dx, self._win_pos[1] + dy)
-        self._win_pos = (self._win_pos[0] + dx, self._win_pos[1] + dy)
+        if not self._moved:
+            dx = pos[0] - self._press_pos[0]
+            dy = pos[1] - self._press_pos[1]
+            if dx * dx + dy * dy > self.threshold * self.threshold:
+                self._moved = True
+                self.dragging = True
         return self.dragging
+
+    def tick(self):
+        """Called every frame while pressed: drive the window from the cursor.
+
+        Polls the absolute cursor position and moves the window so the
+        grab offset is preserved. This keeps the drag smooth even when the
+        window has moved far from the cursor (where MOUSEMOTION stops).
+        On non-Windows / in tests without a real cursor, this is a no-op
+        for the click-vs-drag decision (handled by on_move).
+        """
+        if not self.pressed:
+            return
+        if self._moved and self.dragging:
+            cur = cursor_pos()
+            nx = cur[0] - self._grab_dx
+            ny = cur[1] - self._grab_dy
+            move_window_to(nx, ny)
+            self._win_pos = (nx, ny)
 
     def on_release(self, pos):
         """Left mouse released: True if this was a click, False if a drag."""
         was_click = self.pressed and not self.dragging
         self.pressed = False
         self.dragging = False
+        self._moved = False
         self._press_pos = None
-        self._last_pos = None
         self._win_pos = None
+        self._grab_dx = 0
+        self._grab_dy = 0
         return was_click
 
     # ------------------------------------------------------------------
@@ -268,6 +329,8 @@ class DragController:
         """Drop any pending press (e.g. on state change)."""
         self.pressed = False
         self.dragging = False
+        self._moved = False
         self._press_pos = None
-        self._last_pos = None
         self._win_pos = None
+        self._grab_dx = 0
+        self._grab_dy = 0

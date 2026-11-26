@@ -36,13 +36,12 @@ class Renderer:
         screen.blit(scaled, (0, 0))
 
     def finish(self, canvas):
-        """Framing border on every screen (the tiny window stands out).
+        """No-op: the outer framing border is removed for stealth.
 
-        Inset a few px so the border never reaches the window edge (which
-        would read as clipping at the tiny size)."""
-        w = self.canvas_size
-        pygame.draw.rect(canvas, FRAME, (22, 22, w - 44, w - 44), 5,
-                         border_radius=14)
+        The window is meant to look like an unremarkable plain square, so
+        no decorative border is drawn around any screen. Kept as a method
+        so all callers (games, menu, stats) remain unchanged."""
+        pass
 
     # ------------------------------------------------------------------
     # Primitives
