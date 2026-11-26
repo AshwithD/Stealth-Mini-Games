@@ -58,6 +58,8 @@ for idx, (key_, name, label, icon, desc) in enumerate(GAME_META):
         p = g._new_pipe()
         p["x"] = 210
         g.pipes.append(p)
+    if key_ == "1":  # force normal (red) food so the pixel check is stable
+        g.food = (g.food[0], False)
     shots[f"{idx + 3:02d}_{name.lower()}.png"] = save(
         f"{idx + 3:02d}_{name.lower()}.png",
         lambda g=g: g.draw(canvas, R))
