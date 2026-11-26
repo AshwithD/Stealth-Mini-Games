@@ -16,7 +16,7 @@ MARGIN = 18
 def menu_cells(canvas_size):
     """Return list of (key, rect, label, icon, kind) for the 3x3 grid."""
     top = 62
-    bottom_reserve = 46
+    bottom_reserve = 70
     usable = canvas_size - top - bottom_reserve
     cell_h = (usable - (GRID_ROWS - 1) * CELL_GAP) // GRID_ROWS
     cell_w = (canvas_size - 2 * MARGIN - (GRID_COLS - 1) * CELL_GAP) // GRID_COLS
@@ -85,7 +85,7 @@ def draw_menu(canvas, R, meta, hover, store):
     R.clear(canvas)
     w = R.canvas_size
     s = R.text(44, True, "MINI GAMES", FG)
-    R.blit_center(canvas, s, w // 2, 26)
+    R.blit_center(canvas, s, w // 2, 38)
     meta_by_key = {m[0]: m for m in meta}
     for key, rect, label, icon, kind in menu_cells(w):
         if kind == "game":
@@ -103,9 +103,9 @@ def draw_menu(canvas, R, meta, hover, store):
         l = R.text(20, True, label, BG if sel else FG)
         R.blit_center(canvas, l, rect.x + rect.w // 2, rect.y + 58)
     h1 = R.text(23, False, "1-9 / CLICK    ESC = QUIT", DIM)
-    R.blit_center(canvas, h1, w // 2, w - 40)
+    R.blit_center(canvas, h1, w // 2, w - 56)
     h2 = R.text(21, False, "drag to move    right-click quits", DIM)
-    R.blit_center(canvas, h2, w // 2, w - 18)
+    R.blit_center(canvas, h2, w // 2, w - 34)
     R.finish(canvas)
 
 

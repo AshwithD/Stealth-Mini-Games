@@ -15,7 +15,7 @@ import pygame
 from ..constants import BG, FG, DIM, GRID_D, TILE_COLORS, MOVE_KEYS
 from .base import GameBase
 
-ANIM_DUR = 7          # frames for slide/merge animation
+ANIM_DUR = 14         # frames for slide/merge animation (slow, smooth)
 UNDO_LIMIT = 20
 
 

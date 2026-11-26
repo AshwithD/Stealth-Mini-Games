@@ -223,12 +223,12 @@ check("2048 spawns into empty cell", n >= 3)
 moved = g.move(0, -1)  # left
 check("2048 left move registers", moved is True)
 check("2048 move creates animation", g.anim is not None)
-for _ in range(10):
+for _ in range(20):
     g.update(1 / 60)
 check("2048 animation finishes", g.anim is None)
 for _ in range(4):
     g.move(0, 1); g.move(1, 0); g.move(-1, 0)
-    for _ in range(10):
+    for _ in range(20):
         g.update(1 / 60)
 undo_before = (sum(v for row in g.grid for v in row), g.score)
 check("2048 undo possible", g.undo())
@@ -255,10 +255,10 @@ print("== flap ==")
 g = GAME_CLASSES["4"]()
 check("flap starts with grace", g.grace > 0 and not g.over)
 # during grace the bird is clamped and cannot die
-for _ in range(55):
+for _ in range(110):
     g.update(1 / 60)
 check("flap cannot die during grace", not g.over and g.grace > 0)
-check("flap clamped to field during grace", 8 <= g.y <= 360 - g.bird_h - 18,
+check("flap clamped to field during grace", 10 <= g.y <= 360 - g.bird_h - 20,
       str(g.y))
 for _ in range(300):
     g.update(1 / 60)
@@ -274,7 +274,7 @@ for _ in range(600):
 check("flap jumps keep it alive", g2.score >= 0)
 # worst case: never jump -> must eventually end (not hang forever)
 g3 = GAME_CLASSES["4"]()
-for _ in range(1500):
+for _ in range(3000):
     g3.update(1 / 60)
     if g3.over:
         break

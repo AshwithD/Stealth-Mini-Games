@@ -14,8 +14,8 @@ import pygame
 from ..constants import BG, FG, DIM, ACCENT, GREEN, RED, YELLOW
 from .base import GameBase
 
-BASE_LIFETIME = 1.4
-MIN_LIFETIME = 0.5
+BASE_LIFETIME = 2.4
+MIN_LIFETIME = 1.2
 RADIUS = 26
 MARGIN = 48
 LIVES = 3
@@ -46,7 +46,7 @@ class ReactionGame(GameBase):
 
     # ------------------------------------------------------------------
     def _lifetime(self):
-        return max(MIN_LIFETIME, BASE_LIFETIME - self.score * 0.06)
+        return max(MIN_LIFETIME, BASE_LIFETIME - self.score * 0.04)
 
     def spawn_target(self):
         self.lifetime = self._lifetime()

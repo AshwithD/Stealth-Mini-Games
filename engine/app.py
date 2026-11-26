@@ -210,7 +210,7 @@ class App:
         try:
             while self._running:
                 dt = clock.tick(self.cfg["fps"]) / self.cfg["fps"]
-                if stabilize_frames > 0:
+                if stabilize_frames > 0 and not self.drag.dragging:
                     stabilize_frames -= 1
                     px, py = window_position()
                     if not (px == 0 and 0 < py):

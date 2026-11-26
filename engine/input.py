@@ -124,16 +124,19 @@ def _set_window_pos(h, x, y):
 def move_window_to(x, y):
     """Move the window to screen (x, y) without resizing it.
 
-    Tries every available method until one succeeds. Never resizes.
+    Win32 SetWindowPos is tried FIRST because it is synchronous and smooth
+    (SDL's set_window_position can stutter/lag on some builds, which makes
+    dragging feel jerky). Tries every available method until one succeeds.
+    Never resizes.
     """
     x, y = int(x), int(y)
 
-    # 1. SDL native
-    try:
-        pygame.display.set_window_position(x, y)
-        return True
-    except Exception:
-        pass
+    # 1. Win32 SetWindowPos via caption-found handle (handle-independent,
+    #    fast + synchronous -> smooth drag)
+    if _USER32 is not None:
+        h = _handle_by_caption()
+        if h and _set_window_pos(h, x, y):
+            return True
 
     # 2. Win32 SetWindowPos via pygame handle
     if _USER32 is not None:
@@ -141,11 +144,12 @@ def move_window_to(x, y):
         if h and _set_window_pos(h, x, y):
             return True
 
-    # 3. Win32 SetWindowPos via caption-found handle (handle-independent)
-    if _USER32 is not None:
-        h = _handle_by_caption()
-        if h and _set_window_pos(h, x, y):
-            return True
+    # 3. SDL native (fallback - can be laggy on some builds)
+    try:
+        pygame.display.set_window_position(x, y)
+        return True
+    except Exception:
+        pass
 
     # 4. SDL2 SDL_SetWindowPosition via ctypes
     try:
@@ -208,8 +212,9 @@ class DragController:
         self.threshold = threshold
         self.pressed = False
         self.dragging = False
-        self._press_pos = None
-        self._win_pos = None
+        self._press_pos = None      # mouse position at press
+        self._last_pos = None       # last mouse position seen
+        self._win_pos = None        # window screen position at press
 
     # ------------------------------------------------------------------
     def on_press(self, pos):
@@ -217,19 +222,35 @@ class DragController:
         self.pressed = True
         self.dragging = False
         self._press_pos = pos
+        self._last_pos = pos
+        # capture the window's real screen position (best effort)
         self._win_pos = window_position()
 
     def on_move(self, pos):
-        """Mouse moved: start dragging once past the threshold."""
+        """Mouse moved: start dragging once past the threshold, then follow.
+
+        Uses incremental deltas (movement since the last event) so the
+        window follows the cursor smoothly, independent of how accurate
+        the initial position capture was.
+        """
         if not self.pressed or self.dragging:
             return False
-        if self._press_pos is None or self._win_pos is None:
+        if self._last_pos is None or self._win_pos is None:
             return False
-        dx = pos[0] - self._press_pos[0]
-        dy = pos[1] - self._press_pos[1]
-        if dx * dx + dy * dy > self.threshold * self.threshold:
+        # movement since the last event
+        dx = pos[0] - self._last_pos[0]
+        dy = pos[1] - self._last_pos[1]
+        self._last_pos = pos
+        if not self.dragging:
+            # still below threshold: accumulate, do not move yet
+            total_dx = pos[0] - self._press_pos[0]
+            total_dy = pos[1] - self._press_pos[1]
+            if total_dx * total_dx + total_dy * total_dy <=                     self.threshold * self.threshold:
+                return False
             self.dragging = True
-            move_window_to(self._win_pos[0] + dx, self._win_pos[1] + dy)
+        # move by the incremental delta from the current window position
+        move_window_to(self._win_pos[0] + dx, self._win_pos[1] + dy)
+        self._win_pos = (self._win_pos[0] + dx, self._win_pos[1] + dy)
         return self.dragging
 
     def on_release(self, pos):
@@ -238,6 +259,7 @@ class DragController:
         self.pressed = False
         self.dragging = False
         self._press_pos = None
+        self._last_pos = None
         self._win_pos = None
         return was_click
 
@@ -247,4 +269,5 @@ class DragController:
         self.pressed = False
         self.dragging = False
         self._press_pos = None
+        self._last_pos = None
         self._win_pos = None

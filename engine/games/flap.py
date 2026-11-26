@@ -27,10 +27,10 @@ class FlapGame(GameBase):
         super().__init__()
         self.bird_w, self.bird_h = 38, 30
         self.gx = 92
-        self.gravity = 0.30
-        self.jump = -9.5
-        self.base_speed = 2.3
-        self.base_gap = 170.0
+        self.gravity = 0.20
+        self.jump = -7.5
+        self.base_speed = 1.9
+        self.base_gap = 185.0
         self.pipe_w = 46
         self.spawn_every = 95
         # pre-render the bird once (rotated copies are cheap)
@@ -43,7 +43,7 @@ class FlapGame(GameBase):
     def reset(self):
         self.y = 360 * 0.42
         self.vy = self.jump * 0.8    # starts with a flap
-        self.grace = 60              # no-collision grace at the start
+        self.grace = 120             # long no-collision grace at the start
         self.pipes = []
         self.frame = 0
         self.score = 0
@@ -53,7 +53,7 @@ class FlapGame(GameBase):
         self.spawn_timer = 90
 
     def _speed(self):
-        return min(3.2, self.base_speed + self.score * 0.06)
+        return min(2.6, self.base_speed + self.score * 0.04)
 
     def _gap(self):
         return max(110.0, self.base_gap - self.score * 1.0)
@@ -94,14 +94,18 @@ class FlapGame(GameBase):
                 p["passed"] = True
                 self.score += 1
         self.pipes = [p for p in self.pipes if p["x"] + self.pipe_w > 0]
+        # cap the fall speed so the bird never accelerates into an edge
+        if self.vy > 7.0:
+            self.vy = 7.0
         if self.grace > 0:
             # grace: no collisions and clamp to the field so the bird can
             # never fall out before the player can react
             self.grace -= 1
-            self.y = max(10.0, min(360 - self.bird_h - 24.0, self.y))
+            self.y = max(14.0, min(360 - self.bird_h - 26.0, self.y))
             return
-        ground = 360 - self.bird_h - 20
-        if self.y < 8 or self.y > ground:
+        # forgiving death bounds: the bird must reach well past the field
+        # edge before it dies, giving ample room to recover
+        if self.y < 2 or self.y > 360 - self.bird_h - 12:
             self.over = True
             return
         bird = pygame.Rect(self.gx, self.y, self.bird_w, self.bird_h)
