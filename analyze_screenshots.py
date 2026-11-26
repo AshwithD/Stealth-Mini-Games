@@ -13,25 +13,36 @@ import os
 import sys
 
 os.environ["SDL_VIDEODRIVER"] = "dummy"
-import pygame
+os.environ["SDL_AUDIODRIVER"] = "dummy"
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import stealth_game as g
+
+import pygame
+
+from engine.constants import CANVAS, BG
+from engine.renderer import Renderer
+from engine.menu import draw_menu, draw_stats
+from engine.storage import Store
+from engine.games import GAME_CLASSES, GAME_META
+
+WIN = 114  # ~3 cm at 38 px/cm
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "screenshots", "win")
 os.makedirs(OUT, exist_ok=True)
 
 pygame.init()
-pygame.display.set_mode((g.WIN, g.WIN), g.NOFRAME)
-canvas = pygame.Surface((g.CANVAS, g.CANVAS))
-F = {"title": g.font(48, True), "body": g.font(30), "small": g.font(24)}
-BG = g.BG
+pygame.display.set_mode((WIN, WIN), pygame.NOFRAME)
+canvas = pygame.Surface((CANVAS, CANVAS))
+R = Renderer((WIN, WIN), CANVAS)
+store = Store(os.path.join(os.path.dirname(OUT), ".tmp_screenshots_data.json"))
+for k, v in [("1", 24), ("2", 60)]:
+    store.record_game(k, v)
 
 
 def capture(name, draw_fn):
     canvas.fill(BG)
     draw_fn()
-    small = pygame.transform.smoothscale(canvas, (g.WIN, g.WIN))
+    small = pygame.transform.smoothscale(canvas, (WIN, WIN))
     pygame.image.save(small, os.path.join(OUT, name))
     return small
 
@@ -112,33 +123,27 @@ def analyze(name, img):
 
 
 screens = {}
-screens["menu"] = capture("menu.png", lambda: g.draw_menu(canvas, F, None))
+screens["menu"] = capture("menu.png",
+                          lambda: draw_menu(canvas, R, GAME_META, (90, 90), store))
+screens["stats"] = capture("stats.png",
+                           lambda: draw_stats(canvas, R, store, GAME_META))
 
-snake = g.SnakeGame()
-screens["snake"] = capture("snake.png", lambda: snake.draw(canvas, F))
-snake.over = True
-screens["snake_over"] = capture("snake_over.png", lambda: snake.draw(canvas, F))
+for key_, name, label, icon, desc in GAME_META:
+    g = GAME_CLASSES[key_]()
+    for _ in range(20):
+        g.update(1 / 60)
+    if key_ == "4":
+        p = g._new_pipe()
+        p["x"] = 210
+        g.pipes.append(p)
+    screens[name] = capture(f"{name}.png", lambda g=g: g.draw(canvas, R))
+    g.over = True
+    g.best = 99
+    g.new_best = True
+    screens[f"{name}_over"] = capture(
+        f"{name}_over.png", lambda g=g: g.draw(canvas, R))
 
-tr = g.TypeRushGame()
-tr.progress = 2
-screens["type"] = capture("type.png", lambda: tr.draw(canvas, F))
-tr.over = True
-screens["type_over"] = capture("type_over.png", lambda: tr.draw(canvas, F))
-
-g2048 = g.Game2048()
-screens["2048"] = capture("2048.png", lambda: g2048.draw(canvas, F))
-g2048.over = True
-screens["2048_over"] = capture("2048_over.png", lambda: g2048.draw(canvas, F))
-
-fl = g.FlapGame()
-pipe = fl._new_pipe()
-pipe["x"] = 200
-fl.pipes.append(pipe)
-screens["flap"] = capture("flap.png", lambda: fl.draw(canvas, F))
-fl.over = True
-screens["flap_over"] = capture("flap_over.png", lambda: fl.draw(canvas, F))
-
-print(f"\nwindow = {g.WIN}px (~3 cm), canvas = {g.CANVAS}px, scale = {g.CANVAS / g.WIN:.2f}x")
+print(f"\nwindow = {WIN}px (~3 cm), canvas = {CANVAS}px, scale = {CANVAS / WIN:.2f}x")
 ok = True
 for name, img in screens.items():
     ok = analyze(name, img) and ok
