@@ -22,7 +22,8 @@ import pygame
 
 from . import config
 from .constants import CANVAS, NOFRAME
-from .input import DragController, move_to_bottom_left, set_topmost
+from .input import (DragController, move_to_bottom_left, set_topmost,
+                       window_position)
 from .menu import draw_menu, draw_stats, menu_cells
 from .renderer import Renderer
 from .storage import Store
@@ -201,9 +202,19 @@ class App:
         if os.environ.get("STEALTH_SELFTEST"):
             _start_selftest(self)
 
+        # Startup position stabilizer: on some Windows builds the OS or SDL
+        # re-centers a borderless window right after creation, overriding the
+        # initial bottom-left placement. Re-assert it every frame for the
+        # first moments until it sticks (and stop once it's confirmed).
+        stabilize_frames = 90
         try:
             while self._running:
                 dt = clock.tick(self.cfg["fps"]) / self.cfg["fps"]
+                if stabilize_frames > 0:
+                    stabilize_frames -= 1
+                    px, py = window_position()
+                    if not (px == 0 and 0 < py):
+                        move_to_bottom_left(self.win_size)
                 for event in pygame.event.get():
                     self.handle_event(event)
                 self._update(dt)

@@ -63,8 +63,8 @@ class SnakeGame(GameBase):
         return random.choice(free), golden
 
     def _speed(self):
-        # frames between logical moves; base 9 = relaxed/slow, ramps gently
-        return max(5, 9 - self.score // 15)
+        # frames between logical moves; base 12 = very relaxed/slow
+        return max(7, 12 - self.score // 20)
 
     # ------------------------------------------------------------------
     def handle(self, event):
@@ -96,8 +96,8 @@ class SnakeGame(GameBase):
         for i, (x, y) in enumerate(self.body):
             tx, ty = self._center(x, y)
             px, py = self.pos[i]
-            # gentle glide toward target (slow + smooth, never a teleport)
-            self.pos[i] = (px + (tx - px) * 0.35, py + (ty - py) * 0.35)
+            # very gentle glide toward target (slow + smooth, no teleport)
+            self.pos[i] = (px + (tx - px) * 0.25, py + (ty - py) * 0.25)
 
     def _step(self):
         hx = self.body[0][0] + self.dir[0]

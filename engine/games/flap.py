@@ -27,10 +27,10 @@ class FlapGame(GameBase):
         super().__init__()
         self.bird_w, self.bird_h = 38, 30
         self.gx = 92
-        self.gravity = 0.42
-        self.jump = -11.0
-        self.base_speed = 3.0
-        self.base_gap = 160.0
+        self.gravity = 0.30
+        self.jump = -9.5
+        self.base_speed = 2.3
+        self.base_gap = 170.0
         self.pipe_w = 46
         self.spawn_every = 95
         # pre-render the bird once (rotated copies are cheap)
@@ -53,7 +53,7 @@ class FlapGame(GameBase):
         self.spawn_timer = 90
 
     def _speed(self):
-        return min(4.2, self.base_speed + self.score * 0.08)
+        return min(3.2, self.base_speed + self.score * 0.06)
 
     def _gap(self):
         return max(110.0, self.base_gap - self.score * 1.0)
