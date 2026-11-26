@@ -47,17 +47,20 @@ shots["01_menu.png"] = save("01_menu.png", lambda: g.draw_menu(canvas, F, None))
 snake = g.SnakeGame()
 shots["02_snake.png"] = save("02_snake.png", lambda: snake.draw(canvas, F))
 snake.over = True
+snake.best = 5
 shots["03_snake_over.png"] = save("03_snake_over.png", lambda: snake.draw(canvas, F))
 
 tr = g.TypeRushGame()
 tr.progress = 2  # partially typed for a more representative shot
 shots["04_type.png"] = save("04_type.png", lambda: tr.draw(canvas, F))
 tr.over = True
+tr.best = 12
 shots["05_type_over.png"] = save("05_type_over.png", lambda: tr.draw(canvas, F))
 
 g2048 = g.Game2048()
 shots["06_2048.png"] = save("06_2048.png", lambda: g2048.draw(canvas, F))
 g2048.over = True
+g2048.best = 88
 shots["07_2048_over.png"] = save("07_2048_over.png", lambda: g2048.draw(canvas, F))
 
 fl = g.FlapGame()
@@ -66,17 +69,20 @@ pipe["x"] = 200  # on-screen position for the screenshot
 fl.pipes.append(pipe)
 shots["08_flap.png"] = save("08_flap.png", lambda: fl.draw(canvas, F))
 fl.over = True
+fl.best = 4
 shots["09_flap_over.png"] = save("09_flap_over.png", lambda: fl.draw(canvas, F))
 
 # --- verify each screenshot has the expected content ---
 checks = [
     ("01_menu.png", [("white text", g.FG, 150), ("panel buttons", g.PANEL, 2000)]),
-    ("02_snake.png", [("snake body", (46, 168, 88), 400),
-                       ("snake head", (120, 240, 160), 250),
-                       ("food red", g.RED, 100)]),
-    ("04_type.png", [("letters", g.FG, 200), ("timer green", g.GREEN, 100)]),
+    ("02_snake.png", [("snake body", (46, 168, 88), 700),
+                       ("snake head", (120, 240, 160), 500),
+                       ("food red", g.RED, 150)]),
+    ("04_type.png", [("letters", g.FG, 200), ("timer green", g.GREEN, 100),
+                     ("panel", g.PANEL, 1500)]),
     ("06_2048.png", [("tiles", (230, 232, 238), 500)]),
-    ("08_flap.png", [("bird yellow", g.YELLOW, 200), ("pipes green", g.GREEN, 2000)]),
+    ("08_flap.png", [("bird yellow", g.YELLOW, 200), ("pipes green", g.GREEN, 2000),
+                     ("ground", (44, 48, 58), 800)]),
     ("03_snake_over.png", [("OVER red", g.RED, 800)]),
 ]
 print(f"window = {g.WIN}px   canvas = {g.CANVAS}px\n")
